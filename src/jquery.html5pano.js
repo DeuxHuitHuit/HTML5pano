@@ -24,50 +24,50 @@ POSSIBILITY OF SUCH DAMAGE.
 */
 
 (function ($, undefined) {
-
-const w = window,
-	m = w.Math,
-	d = w.document;
 	
-const 	FPS = 30;
-const	DEG2RAD=m.PI/180.0;
+"use strict";
 
-//Canvas to which to draw the panorama
-var		pano_canvas=null;
+var w = window,
+	m = w.Math,
+	d = w.document,
+	DEG2RAD=m.PI/180.0,
+
+	//Canvas to which to draw the panorama
+	pano_canvas=null,
  
-//Event state
-var		mouseIsDown=false;
-var		mouseDownPosLastX=0;
-var		mouseDownPosLastY=0;
-var		displayInfo=true;
-//var		highquality=true;
+	//Event state
+	mouseIsDown=false,
+	mouseDownPosLastX=0,
+	mouseDownPosLastY=0,
+	displayInfo=true,
+//	highquality=true,
 
-//Camera state
-var		cam_heading=90.0;
-var		cam_pitch=90.0;
-var 	cam_fov=90;
+	//Camera state
+	cam_heading=90.0,
+	cam_pitch=90.0,
+	cam_fov=90,
 
+	// request animation frame
+	raf = null,
+	craf = null,
 
-
-//Load image 
-var img_buffer=null,
-	img = null,
+	// Image 
+	img_buffer=null,
 
 	_setTimeout = function (fx, delay) {
-		var
-			frm = w.requestAnimationFrame || w.mozRequestAnimationFrame ||  
+		raf = raf || w.requestAnimationFrame || w.mozRequestAnimationFrame ||  
 				w.webkitRequestAnimationFrame || w.msRequestAnimationFrame ||
 				w.oRequestAnimationFrame || w.setTimeout;
 
-		return frm(fx, frm !== w.setTimeout ? pano_canvas : delay);
+		return raf(fx, raf !== w.setTimeout ? pano_canvas : delay);
 	},
 
 	_clearTimeout = function (timeout) {
-		var frm = w.cancelAnimationFrame || w.webkitCancelRequestAnimationFrame ||
+		craf = w.cancelAnimationFrame || w.webkitCancelRequestAnimationFrame ||
 				w.mozCancelRequestAnimationFrame || w.oCancelRequestAnimationFrame ||
 				w.msCancelRequestAnimationFrame  || w.clearTimeout;
 
-		return frm(timeout);
+		return craf(timeout);
 	},
 	
 	_drawFrm = null,
@@ -87,9 +87,9 @@ var img_buffer=null,
 		_drawFrm = null;
 	},
 	
-	imageLoaded = function (){
-		var   buffer = d.createElement("canvas");
-		var   buffer_ctx = buffer.getContext ("2d");
+	imageLoaded = function (img){
+		var buffer = d.createElement("canvas"),
+			buffer_ctx = buffer.getContext ("2d");
 		
 		//set buffer size
 		buffer.width = img.width;
@@ -99,8 +99,8 @@ var img_buffer=null,
 		buffer_ctx.drawImage(img,0,0);
 	 		
 	 	//get pixels
-	 	var buffer_imgdata = buffer_ctx.getImageData(0, 0, buffer.width, buffer.height);
-	 	var buffer_pixels = buffer_imgdata.data;
+	 	var buffer_imgdata = buffer_ctx.getImageData(0, 0, buffer.width, buffer.height),
+	 		buffer_pixels = buffer_imgdata.data;
 	 	
 	 	// destroy canvas
 	 	//buffer_ctx = null;
@@ -117,7 +117,7 @@ var img_buffer=null,
 		// free RAM
 		//buffer_pixels = null;
 		
-		init_vars();
+		init_vars(img);
 		
 		// initial draw
 		draw();
@@ -138,7 +138,7 @@ var img_buffer=null,
 	theta_fac,
 	phi_fac,
 	
-	init_vars = function () {
+	init_vars = function (img) {
 		// init our private vars
 		src_width=img.width;
 		src_height=img.height;
@@ -167,8 +167,12 @@ var img_buffer=null,
 		w.onkeydown = keyDown;
 		
 		// load img
-		img = new Image();
-		img.onload = imageLoaded;
+		// use local variable here. this will permet
+		// garbage collecting
+		var img = new Image();
+		img.onload = function () {
+			imageLoaded(img);	
+		};
 		img.src = '../img/pano.jpg';
 	},
 
