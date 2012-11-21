@@ -28,6 +28,7 @@ POSSIBILITY OF SUCH DAMAGE.
 const w = window,
 	m = w.Math,
 	d = w.document;
+	
 const 	FPS = 30;
 const	DEG2RAD=m.PI/180.0;
 
@@ -49,10 +50,9 @@ var 	cam_fov=90;
 
 
 //Load image 
-var img_buffer=null;
-var img = new Image();	
+var img_buffer=null,
+	img = null,
 
-	var 
 	_setTimeout = function (fx, delay) {
 		var
 			frm = w.requestAnimationFrame || w.mozRequestAnimationFrame ||  
@@ -63,8 +63,7 @@ var img = new Image();
 	},
 
 	_clearTimeout = function (timeout) {
-		var w = w,
-			frm = w.cancelAnimationFrame || w.webkitCancelRequestAnimationFrame ||
+		var frm = w.cancelAnimationFrame || w.webkitCancelRequestAnimationFrame ||
 				w.mozCancelRequestAnimationFrame || w.oCancelRequestAnimationFrame ||
 				w.msCancelRequestAnimationFrame  || w.clearTimeout;
 
@@ -100,24 +99,24 @@ var img = new Image();
 		buffer_ctx.drawImage(img,0,0);
 	 		
 	 	//get pixels
-	 	var buffer_imgdata = buffer_ctx.getImageData(0, 0,buffer.width,buffer.height);
+	 	var buffer_imgdata = buffer_ctx.getImageData(0, 0, buffer.width, buffer.height);
 	 	var buffer_pixels = buffer_imgdata.data;
 	 	
 	 	// destroy canvas
 	 	//d.removeChild(buffer);
-	 	buffer_ctx = null;
-	 	buffer_imgdata = null;
+	 	//buffer_ctx = null;
+	 	//buffer_imgdata = null;
 	 		
 	 	//convert imgdata to float image buffer
-	 	img_buffer = new Array(img.width*img.height*3);
-	 	for(var i=0,j=0;i<buffer_pixels.length;i+=4, j+=3){
+	 	img_buffer = new Array(img.width * img.height * 3);
+	 	for(var i=0,j=0; i<buffer_pixels.length; i+=4, j+=3){
 			img_buffer[j] 	= buffer_pixels[i];
 			img_buffer[j+1] = buffer_pixels[i+1];
 			img_buffer[j+2] = buffer_pixels[i+2];
 		}
 		
 		// free RAM
-		buffer_pixels = null;
+		//buffer_pixels = null;
 		
 		init_vars();
 		
@@ -127,7 +126,6 @@ var img = new Image();
 	},
 
  	ctx,
-	imgdata,
 	src_width,
 	src_height,
 	dest_width,
@@ -137,12 +135,13 @@ var img = new Image();
 	
 	init_vars = function () {
 		// init our private vars
-		ctx = pano_canvas.getContext("2d");
-		imgdata = ctx.getImageData(0, 0,canvas.width,canvas.height);
 		src_width=img.width;
 		src_height=img.height;
 		dest_width=pano_canvas.width;
 		dest_height=pano_canvas.height;
+		
+		ctx = pano_canvas.getContext("2d");
+		
 		theta_fac=src_height/m.PI;
 		phi_fac=src_width*0.5/m.PI;
 		mouseDownPosLastY = dest_height/2;
@@ -159,6 +158,7 @@ var img = new Image();
 		w.onkeydown = keyDown;
 		
 		// load img
+		img = new Image();
 		img.onload = imageLoaded;
 		img.src = '../img/pano.jpg';
 	},
@@ -205,9 +205,10 @@ var img = new Image();
 
 	/** RENDER **/
 
-	renderPanorama = function (canvas){
+	renderPanorama = function (){
 		//if(canvas!=null && img_buffer!=null){
 			
+			var imgdata = imgdata = ctx.getImageData(0, 0, dest_width, dest_height);
 			var pixels = imgdata.data;
 		
 			
@@ -287,19 +288,19 @@ var img = new Image();
 				
 			//render paromana direct
 			var startTime = new Date();
-				renderPanorama(pano_canvas);
+				renderPanorama();
 			var endTime = new Date();
 			
 			//draw info text
 			if(!!displayInfo){	
 				ctx.fillStyle = "rgba(255,255,255,0.75)";
-				drawRoundedRect(ctx,20,src_height-80,180,60,7);
+				drawRoundedRect(ctx,20,dest_height-80,180,60,7);
 				
 				ctx.fillStyle = "rgba(0, 0, 0, 1)";
 				ctx.font="10pt helvetica";
-				ctx.fillText("Canvas = " +  src_width + "x" + src_height,30,pano_canvas.height-60);
-				ctx.fillText("Image size = " + img.width + "x" + img.height,30,pano_canvas.height-45);
-				ctx.fillText("FPS = " + (1000.0/(endTime.getTime()-startTime.getTime())).toFixed(1),30,pano_canvas.height-30);
+				ctx.fillText("Canvas = " +  dest_width + "x" + dest_height, 30,dest_height-60);
+				ctx.fillText("Image size = " + src_width + "x" + src_height,30,dest_height-45);
+				ctx.fillText("FPS = " + (1000.0/(endTime.getTime()-startTime.getTime())).toFixed(1),30,dest_height-30);
 			}
 	    //}
 	};
