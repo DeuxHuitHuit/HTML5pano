@@ -103,7 +103,6 @@ var img_buffer=null,
 	 	var buffer_pixels = buffer_imgdata.data;
 	 	
 	 	// destroy canvas
-	 	//d.removeChild(buffer);
 	 	//buffer_ctx = null;
 	 	//buffer_imgdata = null;
 	 		
@@ -126,10 +125,16 @@ var img_buffer=null,
 	},
 
  	ctx,
+	
 	src_width,
 	src_height,
+	src_ratio,
+	
 	dest_width,
 	dest_height,
+	dest_ratio,
+	dest_size,
+	
 	theta_fac,
 	phi_fac,
 	
@@ -137,8 +142,12 @@ var img_buffer=null,
 		// init our private vars
 		src_width=img.width;
 		src_height=img.height;
+		src_ratio=src_width/src_height;
+		
 		dest_width=pano_canvas.width;
 		dest_height=pano_canvas.height;
+		dest_ratio=dest_width/dest_height;
+		dest_size=dest_width*dest_height;
 		
 		ctx = pano_canvas.getContext("2d");
 		
@@ -152,8 +161,8 @@ var img_buffer=null,
 		//get canvas and set up call backs
 		pano_canvas = d.getElementById(canvasid);
 		pano_canvas.onmousedown = mouseDown;
-		w.onmousemove = mouseMove;
-		w.onmouseup = mouseUp;
+		pano_canvas.onmousemove = mouseMove;
+		pano_canvas.onmouseup = mouseUp;
 		//w.onmousewheel = mouseScroll;
 		w.onkeydown = keyDown;
 		
@@ -166,9 +175,9 @@ var img_buffer=null,
 	/*** MOUSE ***/
 	
 	mouseDown = function (e){
-		mouseIsDown=true;
-		mouseDownPosLastX=e.clientX;
-		mouseDownPosLastY=e.clientY;
+		mouseIsDown = true;
+		mouseDownPosLastX = e.clientX;
+		mouseDownPosLastY = e.clientY;
 	},
 
 	mouseMove = function (e){
@@ -205,57 +214,61 @@ var img_buffer=null,
 
 	/** RENDER **/
 
-	renderPanorama = function (){
-		//if(canvas!=null && img_buffer!=null){
+	renderPanorama = function () {
 			
-			var imgdata = imgdata = ctx.getImageData(0, 0, dest_width, dest_height);
-			var pixels = imgdata.data;
+		var imgdata = imgdata = ctx.getImageData(0, 0, dest_width, dest_height);
+		var pixels = imgdata.data;
 		
-			
-			
-			//calculate camera plane
-			
-			var ratioUp=2.0*m.tan(cam_fov*DEG2RAD/2.0);
-			var ratioRight=ratioUp*1.33;
-			var camDirX=m.sin(cam_pitch*DEG2RAD)*m.sin(cam_heading*DEG2RAD);
-			var camDirY=m.cos(cam_pitch*DEG2RAD);
-			var camDirZ=m.sin(cam_pitch*DEG2RAD)*m.cos(cam_heading*DEG2RAD);
-			var camUpX=ratioUp*m.sin((cam_pitch-90.0)*DEG2RAD)*m.sin(cam_heading*DEG2RAD);
-			var camUpY=ratioUp*m.cos((cam_pitch-90.0)*DEG2RAD);
-			var camUpZ=ratioUp*m.sin((cam_pitch-90.0)*DEG2RAD)*m.cos(cam_heading*DEG2RAD);
-			var camRightX=ratioRight*m.sin((cam_heading-90.0)*DEG2RAD);
-			var camRightY=0.0;
-			var camRightZ=ratioRight*m.cos((cam_heading-90.0)*DEG2RAD);
-			var camPlaneOriginX=camDirX + 0.5*camUpX - 0.5*camRightX;
-			var camPlaneOriginY=camDirY + 0.5*camUpY - 0.5*camRightY;
-			var camPlaneOriginZ=camDirZ + 0.5*camUpZ - 0.5*camRightZ;
-			
-			//render image
-			var	i,j;
-			for(i=0;i<dest_height;i++){
-				for(j=0;j<dest_width;j++){
-					var	fx=j/dest_width;
-					var	fy=i/dest_height;
-					
-					var	rayX=camPlaneOriginX + fx*camRightX - fy*camUpX;
-					var	rayY=camPlaneOriginY + fx*camRightY - fy*camUpY;
-					var	rayZ=camPlaneOriginZ + fx*camRightZ - fy*camUpZ;
-					var	rayNorm=1.0/m.sqrt(rayX*rayX + rayY*rayY + rayZ*rayZ);
-					
-					var	theta=m.acos(rayY*rayNorm);
-	    			var	phi=m.atan2(rayZ,rayX) + m.PI;
-	    			var	theta_i=m.floor(theta_fac*theta);
-	    			var	phi_i=m.floor(phi_fac*phi);
-	    			
-	    			var	dest_offset=4*(i*dest_width+j);
-					var	src_offset=3*(theta_i*src_width + phi_i);
-					
-					pixels[dest_offset]     = img_buffer[src_offset];
-					pixels[dest_offset+1]   = img_buffer[src_offset+1];
-					pixels[dest_offset+2]   = img_buffer[src_offset+2];
-					//pixels[dest_offset+3] = img_buffer[src_offset+3];
-				}
+		//calculate camera plane
+		var ratioUp=2.0*m.tan(cam_fov*DEG2RAD/2.0);
+		var ratioRight=ratioUp*1.33;
+		var camDirX=m.sin(cam_pitch*DEG2RAD)*m.sin(cam_heading*DEG2RAD);
+		var camDirY=m.cos(cam_pitch*DEG2RAD);
+		var camDirZ=m.sin(cam_pitch*DEG2RAD)*m.cos(cam_heading*DEG2RAD);
+		var camUpX=ratioUp*m.sin((cam_pitch-90.0)*DEG2RAD)*m.sin(cam_heading*DEG2RAD);
+		var camUpY=ratioUp*m.cos((cam_pitch-90.0)*DEG2RAD);
+		var camUpZ=ratioUp*m.sin((cam_pitch-90.0)*DEG2RAD)*m.cos(cam_heading*DEG2RAD);
+		var camRightX=ratioRight*m.sin((cam_heading-90.0)*DEG2RAD);
+		var camRightY=0.0;
+		var camRightZ=ratioRight*m.cos((cam_heading-90.0)*DEG2RAD);
+		var camPlaneOriginX=camDirX + 0.5*camUpX - 0.5*camRightX;
+		var camPlaneOriginY=camDirY + 0.5*camUpY - 0.5*camRightY;
+		var camPlaneOriginZ=camDirZ + 0.5*camUpZ - 0.5*camRightZ;
+		
+		//render image
+		var	i,j;
+		for(i=0;i<dest_height;i++){
+			var offset = i*dest_width;
+			for(j=0;j<dest_width;j++){
+			/*
+			THIS IS WORST
+			for (var x=0;x<dest_size;x++) {
+				i = ~~(x / dest_width);
+				j = x % dest_width; */
+				
+				var	fx=j/dest_width;
+				var	fy=i/dest_height;
+				
+				var	rayX=camPlaneOriginX + fx*camRightX - fy*camUpX;
+				var	rayY=camPlaneOriginY + fx*camRightY - fy*camUpY;
+				var	rayZ=camPlaneOriginZ + fx*camRightZ - fy*camUpZ;
+				var	rayNorm=1.0/m.sqrt(rayX*rayX + rayY*rayY + rayZ*rayZ);
+				
+				var	theta=m.acos(rayY*rayNorm);
+    			var	phi=m.atan2(rayZ,rayX) + m.PI;
+    			
+    			var	theta_i=m.floor(theta_fac*theta);
+    			var	phi_i=m.floor(phi_fac*phi);
+    			
+    			var	dest_offset=4*(offset+j); // x
+				var	src_offset=3*(theta_i*src_width + phi_i);
+				
+				pixels[dest_offset]     = img_buffer[src_offset];
+				pixels[dest_offset+1]   = img_buffer[src_offset+1];
+				pixels[dest_offset+2]   = img_buffer[src_offset+2];
+				//pixels[dest_offset+3] = img_buffer[src_offset+3];
 			}
+		}
 	 		
 	 		//upload image data
 	 		ctx.putImageData(imgdata, 0, 0);
@@ -279,30 +292,34 @@ var img_buffer=null,
 
 
 	draw = function (){
-	    //if(pano_canvas!=null && pano_canvas.getContext!=null){
-	    	//var ctx = pano_canvas.getContext("2d");
-	    	
-	    	//clear canvas
-	    	ctx.fillStyle = "rgba(0, 0, 0, 1)";
-	    	ctx.fillRect(0,0,src_width,src_height);
-				
-			//render paromana direct
-			var startTime = new Date();
-				renderPanorama();
-			var endTime = new Date();
+    	//clear canvas
+    	//ctx.fillStyle = "rgba(0, 0, 0, 1)";
+    	ctx.fillRect(0,0,src_width,src_height);
+		
+		// not working
+		//ctx.clearRect(0,0,src_width,src_height);
 			
-			//draw info text
-			if(!!displayInfo){	
-				ctx.fillStyle = "rgba(255,255,255,0.75)";
-				drawRoundedRect(ctx,20,dest_height-80,180,60,7);
-				
-				ctx.fillStyle = "rgba(0, 0, 0, 1)";
-				ctx.font="10pt helvetica";
-				ctx.fillText("Canvas = " +  dest_width + "x" + dest_height, 30,dest_height-60);
-				ctx.fillText("Image size = " + src_width + "x" + src_height,30,dest_height-45);
-				ctx.fillText("FPS = " + (1000.0/(endTime.getTime()-startTime.getTime())).toFixed(1),30,dest_height-30);
-			}
-	    //}
+		//render paromana direct
+		var startTime = new Date();
+			renderPanorama();
+		
+		//draw info text
+		if(!!displayInfo){	
+			
+			var endTime = new Date(),
+				lastRender = (endTime.getTime()-startTime.getTime());
+			
+			ctx.fillStyle = "rgba(255,255,255,0.75)";
+			drawRoundedRect(ctx,20,dest_height-80,180,60,7);
+			
+			ctx.fillStyle = "rgba(0, 0, 0, 1)";
+			ctx.font="11px consolas, monosapce";
+			ctx.fillText("Canvas: " +  dest_width + "x" + dest_height + " " + dest_ratio.toFixed(3), 30,dest_height-60);
+			ctx.fillText("Image size: " + src_width + "x" + src_height + " " + src_ratio.toFixed(3), 30,dest_height-45);
+			ctx.fillText("FPS: " + (1000.0/lastRender).toFixed(1) + " (" + lastRender + ")",         30,dest_height-30);
+		
+			//console.log(lastRender);
+		}
 	};
    
    // @todo: remove
