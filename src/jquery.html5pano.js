@@ -46,7 +46,7 @@ var w = window,
 	},
 
 	_clearTimeout = function (timeout) {
-		craf = w.cancelAnimationFrame || w.webkitCancelRequestAnimationFrame ||
+		craf = craf || w.cancelAnimationFrame || w.webkitCancelRequestAnimationFrame ||
 				w.mozCancelRequestAnimationFrame || w.oCancelRequestAnimationFrame ||
 				w.msCancelRequestAnimationFrame  || w.clearTimeout;
 
@@ -144,10 +144,10 @@ var w = window,
 		 		
 		 	//convert imgdata to float image buffer
 		 	img_buffer = new Array(img.width * img.height * 3);
-		 	for(var i=0,j=0; i<buffer_pixels.length; i+=4, j+=3){
-				img_buffer[j] 	= buffer_pixels[i];
-				img_buffer[j+1] = buffer_pixels[i+1];
-				img_buffer[j+2] = buffer_pixels[i+2];
+		 	for(var i=0,j=0,l=buffer_pixels.length; i<l; i+=2, j++){
+				img_buffer[j++] = buffer_pixels[i++];
+				img_buffer[j++] = buffer_pixels[i++];
+				img_buffer[j] = buffer_pixels[i];
 			}
 		},
 	
@@ -238,7 +238,7 @@ var w = window,
 		_renderPanorama = function () {
 				
 			var 
-			imgdata = imgdata = ctx.getImageData(0, 0, dest_width, dest_height),
+			imgdata = ctx.getImageData(0, 0, dest_width, dest_height),
 			pixels = imgdata.data,
 			
 			cam_fov_rad = cam_fov*DEG2RAD,
@@ -252,6 +252,7 @@ var w = window,
 			cam_heading_rad = cam_heading*DEG2RAD,
 			cam_heading_sin = m.sin(cam_heading_rad),
 			cam_heading_cos = m.cos(cam_heading_rad),
+			
 			cam_heading_rad_inv = (cam_heading-90.0)*DEG2RAD,
 			
 			//calculate camera plane
@@ -306,7 +307,7 @@ var w = window,
 					
 					pixels[dest_offset++]   = img_buffer[src_offset++];
 					pixels[dest_offset++]   = img_buffer[src_offset++];
-					pixels[dest_offset++]   = img_buffer[src_offset++];
+					pixels[dest_offset]   = img_buffer[src_offset];
 					//pixels[dest_offset+3] = img_buffer[src_offset+3];
 				}
 			}
